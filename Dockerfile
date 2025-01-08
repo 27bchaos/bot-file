@@ -9,13 +9,14 @@ RUN apt-get update && apt-get install -y \
     snapd \
     && apt-get clean
 
-# Enable and start the snapd service
-RUN systemctl enable snapd && \
-    systemctl start snapd && \
-    snap install core
+# Create a symbolic link for /run/systemd/system
+RUN mkdir -p /run/systemd && echo 'docker' > /run/systemd/container
 
-# Install Somiibo using snap
-RUN snap install somiibo
+# Start the snapd service manually and install Somiibo
+RUN /usr/lib/snapd/snapd & \
+    sleep 10 && \
+    snap install core && \
+    snap install somiibo
 
 # Expose any port Somiibo needs (update this if necessary)
 EXPOSE 3000
