@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     sudo \
     apt-transport-https \
     libgbm1 \
+    libasound2 \
     && apt-get clean
 
 # Download the Somiibo .deb file directly
