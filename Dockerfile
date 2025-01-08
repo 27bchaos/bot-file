@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y \
     snapd \
     && apt-get clean
 
-# Enable systemd to work with snapd
-RUN systemctl enable snapd
+# Enable and start the snapd service
+RUN systemctl enable snapd && \
+    systemctl start snapd && \
+    snap install core
 
 # Install Somiibo using snap
 RUN snap install somiibo
