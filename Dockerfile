@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     sudo \
     apt-transport-https \
+    libgbm1 \
     && apt-get clean
 
 # Download the Somiibo .deb file directly
