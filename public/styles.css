@@ -1,0 +1,28 @@
+/* Custom styles on top of Tailwind */
+.queue-item {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Button states */
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Input focus states */
+input:focus {
+    outline: none;
+    ring: 2px;
+    ring-color: rgb(59, 130, 246);
+}

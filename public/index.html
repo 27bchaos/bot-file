@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Streamer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="bg-gray-900 text-white">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-4xl font-bold mb-8">YouTube Streamer</h1>
+        
+        <!-- Stream Status -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Stream Status</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="bg-gray-700 rounded p-4">
+                    <p class="text-gray-400">Status</p>
+                    <p id="streamStatus" class="text-xl font-semibold">Stopped</p>
+                </div>
+                <div class="bg-gray-700 rounded p-4">
+                    <p class="text-gray-400">Videos in Queue</p>
+                    <p id="queueCount" class="text-xl font-semibold">0</p>
+                </div>
+            </div>
+            <div class="mt-4 flex gap-4">
+                <button id="startStream" class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded">Start Stream</button>
+                <button id="stopStream" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded" disabled>Stop Stream</button>
+            </div>
+        </div>
+
+        <!-- Add Video Form -->
+        <div class="bg-gray-800 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-4">Add Video</h2>
+            <form id="addVideoForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-400 mb-2">YouTube URL</label>
+                    <input type="text" id="videoUrl" class="w-full bg-gray-700 rounded px-4 py-2" 
+                           placeholder="https://www.youtube.com/watch?v=...">
+                </div>
+                <div>
+                    <label class="block text-gray-400 mb-2">Title (optional)</label>
+                    <input type="text" id="videoTitle" class="w-full bg-gray-700 rounded px-4 py-2" 
+                           placeholder="Video title">
+                </div>
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-6 py-2 rounded">Add to Queue</button>
+            </form>
+        </div>
+
+        <!-- Queue List -->
+        <div class="bg-gray-800 rounded-lg p-6">
+            <h2 class="text-2xl font-semibold mb-4">Queue</h2>
+            <div id="queueList" class="space-y-4">
+                <!-- Queue items will be added here dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>
