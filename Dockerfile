@@ -1,13 +1,14 @@
 # Use the official Bun image
 FROM oven/bun:latest
 
-# Install Node.js (and npm)
+# Install Node.js (and npm) and FFmpeg
 RUN apt-get update && \
-    apt-get install -y curl && \
+    apt-get install -y curl ffmpeg && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
+# Set the working directory
 WORKDIR /app
 
 # Copy package files
