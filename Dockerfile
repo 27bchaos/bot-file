@@ -1,14 +1,13 @@
 # Use the official Bun image
-FROM oven/bun:1
+FROM oven/bun:latest
 
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
-COPY bun.lockb ./
 
-# Install dependencies
-RUN bun install
+# Install dependencies using npm
+RUN npm install
 
 # Copy source code
 COPY . .
@@ -19,5 +18,5 @@ RUN mkdir -p downloads
 # Expose the port the app runs on
 EXPOSE 3000
 
-# Command to run the application
+# Command to run the application with Bun
 CMD ["bun", "run", "index.ts"]
