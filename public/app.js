@@ -10,12 +10,7 @@ const queueList = document.getElementById('queueList');
 
 // Event Listeners
 startStreamBtn.addEventListener('click', () => {
-    const streamKey = document.getElementById('streamKey').value;
-    if (!streamKey) {
-        alert('Please enter your YouTube stream key');
-        return;
-    }
-    socket.emit('startStream', { streamKey });
+    socket.emit('startStream');
 });
 
 stopStreamBtn.addEventListener('click', () => {
