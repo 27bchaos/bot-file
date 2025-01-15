@@ -34,6 +34,7 @@ io.on('connection', (socket) => {
             
             // Create new streamer instance with provided key
             streamer = new ContinuousYouTubeStreamer(streamKey);
+            console.log(streamKey)
             await streamer.startStreaming();
             broadcastQueueStatus();
         } catch (error: any) {
