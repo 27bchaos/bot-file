@@ -15,6 +15,7 @@ startStreamBtn.addEventListener('click', () => {
         alert('Please enter your YouTube stream key');
         return;
     }
+    alert(streamKey)
     socket.emit('startStream', { streamKey });
 });
 
