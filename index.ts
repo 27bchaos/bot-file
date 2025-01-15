@@ -33,9 +33,7 @@ io.on('connection', (socket) => {
             }
             
             // Create new streamer instance with provided key
-            console.log(streamKey)
             streamer = new ContinuousYouTubeStreamer(streamKey);
-            alert(streamKey)
             await streamer.startStreaming();
             broadcastQueueStatus();
         } catch (error: any) {
@@ -56,7 +54,7 @@ io.on('connection', (socket) => {
     socket.on('addVideo', async (video) => {
         try {
             if (!streamer) {
-                throw new Error('Please start streaming first');
+                throw new Error('Please start streaming firsts');
             }
             await streamer.addToQueue([video]);
             broadcastQueueStatus();

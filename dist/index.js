@@ -40592,49 +40592,29 @@ var ContinousStreamer_default = ContinuousYouTubeStreamer;
 var app = import_express.default();
 var server = createServer(app);
 var io2 = new Server(server);
-
-// Initialize streamer as null
-var streamer = null;
-
+var streamer = new ContinousStreamer_default("mf0k-vv7a-rcb2-dcwe-az92");
 app.use(import_express.default.static(join2(process.cwd(), "public")));
-
 function broadcastQueueStatus() {
-  io2.emit("streamStatus", streamer ? streamer.getQueueStatus() : { isStreaming: false, totalVideos: 0, queue: [] });
+  io2.emit("streamStatus", streamer.getQueueStatus());
 }
-
 io2.on("connection", (socket) => {
   console.log("Client connected");
-  
-  // Send initial status with null check
-  socket.emit("streamStatus", streamer ? streamer.getQueueStatus() : { isStreaming: false, totalVideos: 0, queue: [] });
-  
+  socket.emit("streamStatus", streamer.getQueueStatus());
   socket.on("startStream", async ({ streamKey }) => {
     try {
-      if (!streamKey) {
-        throw new Error('Stream key is required');
-      }
-      // Create new streamer instance with provided key
-      streamer = new ContinousStreamer_default(streamKey);
+      streamer = new ContinuousYouTubeStreamer(streamKey);
       await streamer.startStreaming();
       broadcastQueueStatus();
     } catch (error) {
       socket.emit("error", { message: error.message });
     }
   });
-
   socket.on("stopStream", () => {
-    if (streamer) {
-      streamer.stopStreaming();
-      streamer = null;
-    }
+    streamer.stopStreaming();
     broadcastQueueStatus();
   });
-
   socket.on("addVideo", async (video) => {
     try {
-      if (!streamer) {
-        throw new Error('Please start streaming first');
-      }
       await streamer.addToQueue([video]);
       broadcastQueueStatus();
       const updateInterval = setInterval(() => {
@@ -40648,24 +40628,18 @@ io2.on("connection", (socket) => {
       socket.emit("error", { message: error.message });
     }
   });
-
   socket.on("removeVideo", (index) => {
     try {
-      if (!streamer) {
-        throw new Error('Please start streaming first');
-      }
       streamer.removeFromQueue(index);
       broadcastQueueStatus();
     } catch (error) {
       socket.emit("error", { message: error.message });
     }
   });
-
   socket.on("disconnect", () => {
     console.log("Client disconnected");
   });
 });
-
 var PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
