@@ -8,15 +8,14 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server);
 
-// Create the streamer instance with your YouTube stream key
-const streamer = new ContinuousYouTubeStreamer('mf0k-vv7a-rcb2-dcwe-az92');
+let streamer: ContinuousYouTubeStreamer | null = null;
 
 // Serve static files
 app.use(express.static(join(process.cwd(), 'public')));
 
 // Send queue updates to all clients
 function broadcastQueueStatus() {
-    io.emit('streamStatus', streamer.getQueueStatus());
+    io.emit('streamStatus', streamer ? streamer.getQueueStatus() : { isStreaming: false, totalVideos: 0, queue: [] });
 }
 
 // Socket.IO connection handling
@@ -24,11 +23,17 @@ io.on('connection', (socket) => {
     console.log('Client connected');
 
     // Send initial status
-    socket.emit('streamStatus', streamer.getQueueStatus());
+    socket.emit('streamStatus', streamer ? streamer.getQueueStatus() : { isStreaming: false, totalVideos: 0, queue: [] });
 
     // Handle start stream request
-    socket.on('startStream', async () => {
+    socket.on('startStream', async ({ streamKey }) => {
         try {
+            if (!streamKey) {
+                throw new Error('Stream key is required');
+            }
+            
+            // Create new streamer instance with provided key
+            streamer = new ContinuousYouTubeStreamer(streamKey);
             await streamer.startStreaming();
             broadcastQueueStatus();
         } catch (error: any) {
@@ -38,13 +43,19 @@ io.on('connection', (socket) => {
 
     // Handle stop stream request
     socket.on('stopStream', () => {
-        streamer.stopStreaming();
+        if (streamer) {
+            streamer.stopStreaming();
+            streamer = null;
+        }
         broadcastQueueStatus();
     });
 
     // Handle add video request
     socket.on('addVideo', async (video) => {
         try {
+            if (!streamer) {
+                throw new Error('Please start streaming first');
+            }
             await streamer.addToQueue([video]);
             broadcastQueueStatus();
 
@@ -67,6 +78,9 @@ io.on('connection', (socket) => {
     // Handle remove video request
     socket.on('removeVideo', (index: number) => {
         try {
+            if (!streamer) {
+                throw new Error('Please start streaming first');
+            }
             streamer.removeFromQueue(index);
             broadcastQueueStatus();
         } catch (error: any) {
