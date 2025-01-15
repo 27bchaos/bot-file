@@ -40592,28 +40592,49 @@ var ContinousStreamer_default = ContinuousYouTubeStreamer;
 var app = import_express.default();
 var server = createServer(app);
 var io2 = new Server(server);
-var streamer = new ContinousStreamer_default("auuu-kuqq-k7rb-3xa5-eyv9");
+
+// Initialize streamer as null
+var streamer = null;
+
 app.use(import_express.default.static(join2(process.cwd(), "public")));
+
 function broadcastQueueStatus() {
-  io2.emit("streamStatus", streamer.getQueueStatus());
+  io2.emit("streamStatus", streamer ? streamer.getQueueStatus() : { isStreaming: false, totalVideos: 0, queue: [] });
 }
+
 io2.on("connection", (socket) => {
   console.log("Client connected");
-  socket.emit("streamStatus", streamer.getQueueStatus());
-  socket.on("startStream", async () => {
+  
+  // Send initial status with null check
+  socket.emit("streamStatus", streamer ? streamer.getQueueStatus() : { isStreaming: false, totalVideos: 0, queue: [] });
+  
+  socket.on("startStream", async ({ streamKey }) => {
     try {
+      if (!streamKey) {
+        throw new Error('Stream key is required');
+      }
+      // Create new streamer instance with provided key
+      streamer = new ContinousStreamer_default(streamKey);
       await streamer.startStreaming();
       broadcastQueueStatus();
     } catch (error) {
       socket.emit("error", { message: error.message });
     }
   });
+
   socket.on("stopStream", () => {
-    streamer.stopStreaming();
+    if (streamer) {
+      streamer.stopStreaming();
+      streamer = null;
+    }
     broadcastQueueStatus();
   });
+
   socket.on("addVideo", async (video) => {
     try {
+      if (!streamer) {
+        throw new Error('Please start streaming first');
+      }
       await streamer.addToQueue([video]);
       broadcastQueueStatus();
       const updateInterval = setInterval(() => {
@@ -40627,18 +40648,24 @@ io2.on("connection", (socket) => {
       socket.emit("error", { message: error.message });
     }
   });
+
   socket.on("removeVideo", (index) => {
     try {
+      if (!streamer) {
+        throw new Error('Please start streaming first');
+      }
       streamer.removeFromQueue(index);
       broadcastQueueStatus();
     } catch (error) {
       socket.emit("error", { message: error.message });
     }
   });
+
   socket.on("disconnect", () => {
     console.log("Client disconnected");
   });
 });
+
 var PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
