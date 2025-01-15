@@ -34,7 +34,7 @@ interface VideoDetails {
 }
 
 class ContinuousYouTubeStreamer {
-  private streamKey: string;
+  private streamKey: string | null;
   private ffmpeg: any;
   private videoQueue: VideoQueue[];
   private tempDir: string;
@@ -42,8 +42,8 @@ class ContinuousYouTubeStreamer {
   private readonly rapidApiKey = '9bbd63a244msh775726887ed1838p17724fjsn6a3fd77c9ff1';
   private readonly rapidApiHost = 'youtube-media-downloader.p.rapidapi.com';
 
-  constructor(streamKey: string) {
-    this.streamKey = streamKey;
+  constructor() {
+    this.streamKey = null;
     this.videoQueue = [];
     this.isStreaming = false;
     this.tempDir = path.join(process.cwd(), 'downloads');
@@ -234,29 +234,31 @@ class ContinuousYouTubeStreamer {
     }
   }
 
-  removeFromQueue(index: number) {
-    if (index >= 0 && index < this.videoQueue.length) {
-      // If the video has a local file, try to delete it
-      const video = this.videoQueue[index];
-      if (video.localPath) {
-        fs.unlink(video.localPath).catch(err => 
-          console.error(`Error deleting file ${video.localPath}:`, err)
-        );
-      }
-      
-      // Remove the video from the queue
-      this.videoQueue.splice(index, 1);
-      
-      // Update concatenated file if streaming
-      if (this.isStreaming) {
-        this.updateConcatenatedFile().catch(error => 
-          console.error('Error updating concatenated file:', error)
-        );
-      }
+  public setStreamKey(streamKey: string) {
+    if (!streamKey) {
+      throw new Error('Stream key cannot be empty');
     }
+    this.streamKey = streamKey;
+  }
+
+  public async startStreaming() {
+    if (!this.streamKey) {
+      throw new Error('Stream key is required to start streaming');
+    }
+    
+    if (this.isStreaming) {
+      throw new Error('Already streaming');
+    }
+
+    this.isStreaming = true;
+    await this.updateConcatenatedFile();
+    this.startFFmpegStream();
   }
 
   private startFFmpegStream() {
+    if (!this.streamKey) {
+      throw new Error('Stream key is required to start streaming');
+    }
     const youtubeUrl = `rtmp://a.rtmp.youtube.com/live2/${this.streamKey}`;
     const concatenatedVideoPath = path.join(this.tempDir, 'concatenated.mp4');
 
@@ -287,34 +289,33 @@ class ContinuousYouTubeStreamer {
     });
   }
 
-  async startStreaming() {
-    if (this.isStreaming) {
-      console.log('Streaming is already in progress');
-      return;
-    }
-
-    if (this.videoQueue.length === 0) {
-      throw new Error('No videos in queue');
-    }
-
-    this.isStreaming = true;
-    console.log('Starting continuous stream...');
-
-    try {
-      await this.updateConcatenatedFile();
-      await this.startFFmpegStream();
-    } catch (error) {
-      console.error('Error starting stream:', error);
-      this.isStreaming = false;
-      throw error;
-    }
-  }
-
   stopStreaming() {
     this.isStreaming = false;
     if (this.ffmpeg) {
       this.ffmpeg.kill('SIGINT');
       this.ffmpeg = null;
+    }
+  }
+
+  removeFromQueue(index: number) {
+    if (index >= 0 && index < this.videoQueue.length) {
+      // If the video has a local file, try to delete it
+      const video = this.videoQueue[index];
+      if (video.localPath) {
+        fs.unlink(video.localPath).catch(err => 
+          console.error(`Error deleting file ${video.localPath}:`, err)
+        );
+      }
+      
+      // Remove the video from the queue
+      this.videoQueue.splice(index, 1);
+      
+      // Update concatenated file if streaming
+      if (this.isStreaming) {
+        this.updateConcatenatedFile().catch(error => 
+          console.error('Error updating concatenated file:', error)
+        );
+      }
     }
   }
 

@@ -40341,8 +40341,8 @@ class ContinuousYouTubeStreamer {
   isStreaming;
   rapidApiKey = "9bbd63a244msh775726887ed1838p17724fjsn6a3fd77c9ff1";
   rapidApiHost = "youtube-media-downloader.p.rapidapi.com";
-  constructor(streamKey) {
-    this.streamKey = streamKey;
+  constructor() {
+    this.streamKey = null;
     this.videoQueue = [];
     this.isStreaming = false;
     this.tempDir = path.join(process.cwd(), "downloads");
@@ -40496,19 +40496,27 @@ class ContinuousYouTubeStreamer {
       console.error("Error during video concatenation:", error);
     }
   }
-  removeFromQueue(index) {
-    if (index >= 0 && index < this.videoQueue.length) {
-      const video = this.videoQueue[index];
-      if (video.localPath) {
-        fs.unlink(video.localPath).catch((err) => console.error(`Error deleting file ${video.localPath}:`, err));
-      }
-      this.videoQueue.splice(index, 1);
-      if (this.isStreaming) {
-        this.updateConcatenatedFile().catch((error) => console.error("Error updating concatenated file:", error));
-      }
+  setStreamKey(streamKey) {
+    if (!streamKey) {
+      throw new Error("Stream key cannot be empty");
     }
+    this.streamKey = streamKey;
+  }
+  async startStreaming() {
+    if (!this.streamKey) {
+      throw new Error("Stream key is required to start streaming");
+    }
+    if (this.isStreaming) {
+      throw new Error("Already streaming");
+    }
+    this.isStreaming = true;
+    await this.updateConcatenatedFile();
+    this.startFFmpegStream();
   }
   startFFmpegStream() {
+    if (!this.streamKey) {
+      throw new Error("Stream key is required to start streaming");
+    }
     const youtubeUrl = `rtmp://a.rtmp.youtube.com/live2/${this.streamKey}`;
     const concatenatedVideoPath = path.join(this.tempDir, "concatenated.mp4");
     console.log("Starting stream...");
@@ -40547,30 +40555,23 @@ class ContinuousYouTubeStreamer {
       console.log(`FFmpeg process closed with code ${code}`);
     });
   }
-  async startStreaming() {
-    if (this.isStreaming) {
-      console.log("Streaming is already in progress");
-      return;
-    }
-    if (this.videoQueue.length === 0) {
-      throw new Error("No videos in queue");
-    }
-    this.isStreaming = true;
-    console.log("Starting continuous stream...");
-    try {
-      await this.updateConcatenatedFile();
-      await this.startFFmpegStream();
-    } catch (error) {
-      console.error("Error starting stream:", error);
-      this.isStreaming = false;
-      throw error;
-    }
-  }
   stopStreaming() {
     this.isStreaming = false;
     if (this.ffmpeg) {
       this.ffmpeg.kill("SIGINT");
       this.ffmpeg = null;
+    }
+  }
+  removeFromQueue(index) {
+    if (index >= 0 && index < this.videoQueue.length) {
+      const video = this.videoQueue[index];
+      if (video.localPath) {
+        fs.unlink(video.localPath).catch((err) => console.error(`Error deleting file ${video.localPath}:`, err));
+      }
+      this.videoQueue.splice(index, 1);
+      if (this.isStreaming) {
+        this.updateConcatenatedFile().catch((error) => console.error("Error updating concatenated file:", error));
+      }
     }
   }
   getQueueStatus() {
@@ -40592,20 +40593,20 @@ var ContinousStreamer_default = ContinuousYouTubeStreamer;
 var app = import_express.default();
 var server = createServer(app);
 var io2 = new Server(server);
-var streamer = null;
+var streamer = new ContinousStreamer_default;
+var broadcastQueueStatus = () => {
+  io2.emit("streamStatus", streamer.getQueueStatus());
+};
 app.use(import_express.default.static(join2(process.cwd(), "public")));
-function broadcastQueueStatus() {
-  io2.emit("streamStatus", streamer ? streamer.getQueueStatus() : { isStreaming: false, totalVideos: 0, queue: [] });
-}
 io2.on("connection", (socket) => {
   console.log("Client connected");
-  socket.emit("streamStatus", streamer ? streamer.getQueueStatus() : { isStreaming: false, totalVideos: 0, queue: [] });
+  socket.emit("streamStatus", streamer.getQueueStatus());
   socket.on("startStream", async ({ streamKey }) => {
     try {
       if (!streamKey) {
         throw new Error("Stream key is required");
       }
-      streamer = new ContinousStreamer_default(streamKey);
+      streamer.setStreamKey(streamKey);
       await streamer.startStreaming();
       broadcastQueueStatus();
     } catch (error) {
@@ -40613,17 +40614,11 @@ io2.on("connection", (socket) => {
     }
   });
   socket.on("stopStream", () => {
-    if (streamer) {
-      streamer.stopStreaming();
-      streamer = null;
-    }
+    streamer.stopStreaming();
     broadcastQueueStatus();
   });
   socket.on("addVideo", async (video) => {
     try {
-      if (!streamer) {
-        throw new Error("Please start streaming first");
-      }
       await streamer.addToQueue([video]);
       broadcastQueueStatus();
       const updateInterval = setInterval(() => {
@@ -40639,9 +40634,6 @@ io2.on("connection", (socket) => {
   });
   socket.on("removeVideo", (index) => {
     try {
-      if (!streamer) {
-        throw new Error("Please start streaming first");
-      }
       streamer.removeFromQueue(index);
       broadcastQueueStatus();
     } catch (error) {
