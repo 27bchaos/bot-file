@@ -7,16 +7,24 @@ const startStreamBtn = document.getElementById('startStream');
 const stopStreamBtn = document.getElementById('stopStream');
 const addVideoForm = document.getElementById('addVideoForm');
 const queueList = document.getElementById('queueList');
+const liveStreamLinkContainer = document.getElementById('liveStreamLink');
+const liveStreamUrl = liveStreamLinkContainer.querySelector('a');
 
 // Event Listeners
 startStreamBtn.addEventListener('click', () => {
     const streamKey = document.getElementById('streamKey').value;
+    const channelId = document.getElementById('channelId').value;
+    
     if (!streamKey) {
         alert('Please enter your YouTube stream key');
         return;
     }
-    alert(streamKey)
-    socket.emit('startStream', { streamKey });
+    if (!channelId) {
+        alert('Please enter your YouTube channel ID');
+        return;
+    }
+    
+    socket.emit('startStream', { streamKey, channelId });
 });
 
 stopStreamBtn.addEventListener('click', () => {
@@ -41,6 +49,17 @@ socket.on('streamStatus', (data) => {
     startStreamBtn.disabled = data.isStreaming;
     stopStreamBtn.disabled = !data.isStreaming;
     queueCount.textContent = data.totalVideos;
+
+    // Update live stream link
+    if (data.liveStreamUrl) {
+        liveStreamLinkContainer.classList.remove('hidden');
+        liveStreamUrl.href = data.liveStreamUrl;
+        liveStreamUrl.textContent = data.liveStreamUrl;
+    } else {
+        liveStreamLinkContainer.classList.add('hidden');
+        liveStreamUrl.href = '#';
+        liveStreamUrl.textContent = '';
+    }
 
     // Update queue display
     if (data.queue) {

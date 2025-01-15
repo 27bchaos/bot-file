@@ -35,6 +35,7 @@ interface VideoDetails {
 
 class ContinuousYouTubeStreamer {
   private streamKey: string | null;
+  private channelId: string | null;
   private ffmpeg: any;
   private videoQueue: VideoQueue[];
   private tempDir: string;
@@ -44,6 +45,7 @@ class ContinuousYouTubeStreamer {
 
   constructor() {
     this.streamKey = null;
+    this.channelId = null;
     this.videoQueue = [];
     this.isStreaming = false;
     this.tempDir = path.join(process.cwd(), 'downloads');
@@ -234,11 +236,22 @@ class ContinuousYouTubeStreamer {
     }
   }
 
-  public setStreamKey(streamKey: string) {
+  public setStreamKey(streamKey: string, channelId: string) {
     if (!streamKey) {
       throw new Error('Stream key cannot be empty');
     }
+    if (!channelId) {
+      throw new Error('Channel ID cannot be empty');
+    }
     this.streamKey = streamKey;
+    this.channelId = channelId;
+  }
+
+  public getLiveStreamUrl(): string | null {
+    if (!this.channelId || !this.isStreaming) {
+      return null;
+    }
+    return `https://www.youtube.com/channel/${this.channelId}/live`;
   }
 
   public async startStreaming() {
@@ -328,7 +341,8 @@ class ContinuousYouTubeStreamer {
         url: video.url,
         downloadStatus: video.downloadStatus,
         downloadProgress: video.downloadProgress
-      }))
+      })),
+      liveStreamUrl: this.getLiveStreamUrl()
     };
   }
 }

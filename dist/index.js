@@ -40335,6 +40335,7 @@ var axios_default = axios;
 // classes/ContinousStreamer.ts
 class ContinuousYouTubeStreamer {
   streamKey;
+  channelId;
   ffmpeg;
   videoQueue;
   tempDir;
@@ -40343,6 +40344,7 @@ class ContinuousYouTubeStreamer {
   rapidApiHost = "youtube-media-downloader.p.rapidapi.com";
   constructor() {
     this.streamKey = null;
+    this.channelId = null;
     this.videoQueue = [];
     this.isStreaming = false;
     this.tempDir = path.join(process.cwd(), "downloads");
@@ -40496,11 +40498,21 @@ class ContinuousYouTubeStreamer {
       console.error("Error during video concatenation:", error);
     }
   }
-  setStreamKey(streamKey) {
+  setStreamKey(streamKey, channelId) {
     if (!streamKey) {
       throw new Error("Stream key cannot be empty");
     }
+    if (!channelId) {
+      throw new Error("Channel ID cannot be empty");
+    }
     this.streamKey = streamKey;
+    this.channelId = channelId;
+  }
+  getLiveStreamUrl() {
+    if (!this.channelId || !this.isStreaming) {
+      return null;
+    }
+    return `https://www.youtube.com/channel/${this.channelId}/live`;
   }
   async startStreaming() {
     if (!this.streamKey) {
@@ -40583,7 +40595,8 @@ class ContinuousYouTubeStreamer {
         url: video.url,
         downloadStatus: video.downloadStatus,
         downloadProgress: video.downloadProgress
-      }))
+      })),
+      liveStreamUrl: this.getLiveStreamUrl()
     };
   }
 }
@@ -40601,12 +40614,15 @@ app.use(import_express.default.static(join2(process.cwd(), "public")));
 io2.on("connection", (socket) => {
   console.log("Client connected");
   socket.emit("streamStatus", streamer.getQueueStatus());
-  socket.on("startStream", async ({ streamKey }) => {
+  socket.on("startStream", async ({ streamKey, channelId }) => {
     try {
       if (!streamKey) {
         throw new Error("Stream key is required");
       }
-      streamer.setStreamKey(streamKey);
+      if (!channelId) {
+        throw new Error("Channel ID is required");
+      }
+      streamer.setStreamKey(streamKey, channelId);
       await streamer.startStreaming();
       broadcastQueueStatus();
     } catch (error) {

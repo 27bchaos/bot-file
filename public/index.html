@@ -20,6 +20,11 @@
                 <input type="password" id="streamKey" class="w-full bg-gray-700 rounded px-4 py-2" 
                        placeholder="Enter your YouTube stream key">
             </div>
+            <div class="mb-4">
+                <label class="block text-gray-400 mb-2">YouTube Channel ID</label>
+                <input type="text" id="channelId" class="w-full bg-gray-700 rounded px-4 py-2" 
+                       placeholder="Enter your YouTube channel ID">
+            </div>
             <div class="grid grid-cols-2 gap-4">
                 <div class="bg-gray-700 rounded p-4">
                     <p class="text-gray-400">Status</p>
@@ -33,6 +38,10 @@
             <div class="mt-4 flex gap-4">
                 <button id="startStream" class="bg-green-600 hover:bg-green-700 px-6 py-2 rounded">Start Stream</button>
                 <button id="stopStream" class="bg-red-600 hover:bg-red-700 px-6 py-2 rounded" disabled>Stop Stream</button>
+            </div>
+            <div id="liveStreamLink" class="mt-4 hidden">
+                <p class="text-gray-400 mb-2">Live Stream URL:</p>
+                <a href="#" target="_blank" class="text-blue-400 hover:text-blue-300 break-all"></a>
             </div>
         </div>
 

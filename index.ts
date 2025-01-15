@@ -26,14 +26,17 @@ io.on('connection', (socket) => {
     socket.emit('streamStatus', streamer.getQueueStatus());
 
     // Handle start stream request
-    socket.on('startStream', async ({ streamKey }) => {
+    socket.on('startStream', async ({ streamKey, channelId }) => {
         try {
             if (!streamKey) {
                 throw new Error('Stream key is required');
             }
+            if (!channelId) {
+                throw new Error('Channel ID is required');
+            }
             
-            // Set the stream key and start streaming
-            streamer.setStreamKey(streamKey);
+            // Set the stream key and channel ID
+            streamer.setStreamKey(streamKey, channelId);
             await streamer.startStreaming();
             broadcastQueueStatus();
         } catch (error: any) {
