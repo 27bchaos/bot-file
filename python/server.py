@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 # HTML template remains the same as before
 HTML_TEMPLATE = '''
-<!DOCTYPE html>
+<!DOCTYPE htssml>
 <html>
 <head>
     <title>YouTube Downloader</title>
