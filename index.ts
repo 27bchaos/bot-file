@@ -33,6 +33,7 @@ io.on('connection', (socket) => {
             }
             
             // Create new streamer instance with provided key
+            console.log(streamKey)
             streamer = new ContinuousYouTubeStreamer(streamKey);
             alert(streamKey)
             await streamer.startStreaming();
